@@ -45,6 +45,8 @@ runs:
           BRANCH_NAME="update-$CURR_REPO_NAME-to-$LATEST_TAG"
           DOWNLOAD_LINK="https://github.com/$CURR_REPO_NAME/releases/download/$LATEST_TAG/$ASSET_NAME"
 
+          echo $PWD
+
           # Clone the remote repository and change working directory to the
           # folder it was cloned to.
           git clone \
@@ -53,12 +55,16 @@ runs:
             https://$USER_NAME:$ACCESS_TOKEN@github.com/$REPOSITORY \
             $FOLDER
 
+
+          echo $PWD
+          echo  ${{github.action_path}}
+
           #install pip packages
           #pip install -r requirements.txt
 
           # Copy scripts inside the cloned directory
-          cp ./sha256.py $FOLDER/sha256.py
-          cp ./update-modlinks.py $FOLDER/update-modlinks.py
+          cp ${{github.action_path}}/sha256.py $FOLDER/sha256.py
+          cp ${{github.action_path}}/update-modlinks.py $FOLDER/update-modlinks.py
 
           cd $FOLDER
 
