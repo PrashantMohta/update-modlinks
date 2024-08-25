@@ -1,0 +1,88 @@
+name: 'Update Modlinks'
+description: 'Create an MR to local fork of modlinks when a new release tag is created'
+inputs:
+  access-token: 
+    description: 'Access token to raise the modlinks MR'
+    required: true
+    default: ''
+  project-name: 
+    description: 'Name of the Mod to use for searching in modlinks'
+    required: true
+    default: ''
+  user-name: 
+    description: 'username to author the commits'
+    required: true
+    default: ''
+  user-email: 
+    description: 'email to author the commit'
+    required: true
+    default: ''
+  asset-name: 
+    description: 'name of the asset to link in modlinks'
+    required: true
+    default: ''
+runs:
+  using: "composite"
+  steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          #cache: 'pip' # caching pip dependencies
+      - name: Update into modlinks and send pull-request
+        run: |
+          
+          CURR_REPO_NAME="${{github.repository}}"
+          ACCESS_TOKEN="${{ inputs.access-token }}"
+          PROJECT_NAME="${{inputs.project-name}}"
+          USER_NAME="${{inputs.user-name }}"
+          USER_EMAIL="${{inputs.user-email }}"
+          ASSET_NAME="${{inputs.asset-name}}"
+          REPOSITORY="$USER_NAME/modlinks"
+
+          LATEST_TAG=$(git describe --tags --always --abbrev=0)
+          FOLDER="bin/$REPOSITORY"
+          BRANCH_NAME="update-$CURR_REPO_NAME-to-$LATEST_TAG"
+          DOWNLOAD_LINK="https://github.com/$CURR_REPO_NAME/releases/download/$LATEST_TAG/$ASSET_NAME"
+
+          # Clone the remote repository and change working directory to the
+          # folder it was cloned to.
+          git clone \
+            --depth=1 \
+            --branch=main \
+            https://$USER_NAME:$ACCESS_TOKEN@github.com/$REPOSITORY \
+            $FOLDER
+
+          #install pip packages
+          #pip install -r requirements.txt
+
+          # Copy scripts inside the cloned directory
+          cp ./sha256.py $FOLDER/sha256.py
+          cp ./update-modlinks.py $FOLDER/update-modlinks.py
+
+          cd $FOLDER
+
+          # Setup the committers identity.
+          git config user.email "$USER_EMAIL"
+          git config user.name "$USER_NAME"
+
+          # Create a new feature branch for the changes.
+          git checkout -b $BRANCH_NAME
+
+          
+          curl -L --output $ASSET_NAME $DOWNLOAD_LINK
+          SHA256=$(python sha256.py $ASSET_NAME)
+          python update-modlinks.py "$PROJECT_NAME" "$LATEST_TAG" "$DOWNLOAD_LINK" "$SHA256"
+
+          # Commit the changes and push the feature branch to origin
+          git add ModLinks.xml
+          git commit -m "update $PROJECT_NAME to $LATEST_TAG"
+          git push origin $BRANCH_NAME --force
+          echo  $ACCESS_TOKEN > pat.txt
+          # Authorize GitHub CLI for the current repository and
+          # create a pull-requests containing the updates.
+          gh auth login --with-token < pat.txt
+          gh pr create \
+            --body "" \
+            --title "Update $PROJECT_NAME to $LATEST_TAG" \
+            --head "$BRANCH_NAME" \
+            --base "main"
