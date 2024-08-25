@@ -29,6 +29,7 @@ runs:
           python-version: '3.9'
           #cache: 'pip' # caching pip dependencies
       - name: Update into modlinks and send pull-request
+        shell: bash
         run: |
           
           CURR_REPO_NAME="${{github.repository}}"
