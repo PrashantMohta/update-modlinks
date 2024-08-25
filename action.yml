@@ -45,8 +45,6 @@ runs:
           BRANCH_NAME="update-$CURR_REPO_NAME-to-$LATEST_TAG"
           DOWNLOAD_LINK="https://github.com/$CURR_REPO_NAME/releases/download/$LATEST_TAG/$ASSET_NAME"
 
-          echo $PWD
-
           # Clone the remote repository and change working directory to the
           # folder it was cloned to.
           git clone \

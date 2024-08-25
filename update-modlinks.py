@@ -34,8 +34,9 @@ print({'name':name,'version':new_version,'link':new_link , 'sha': new_sha})
 tag_name = "{https://github.com/HollowKnight-Modding/HollowKnight.ModLinks/HollowKnight.ModManager}Name"
 tag_version = "{https://github.com/HollowKnight-Modding/HollowKnight.ModLinks/HollowKnight.ModManager}Version"
 tag_link = "{https://github.com/HollowKnight-Modding/HollowKnight.ModLinks/HollowKnight.ModManager}Link"
+tag_repo = "{https://github.com/HollowKnight-Modding/HollowKnight.ModLinks/HollowKnight.ModManager}Repository"
 
-old_modlinks_data = {'name':'','version':'','link':'' , 'sha': ''}
+old_modlinks_data = {'name':'','version':'','link':'' , 'sha': '','repo':''}
 
 tree = ET.parse('ModLinks.xml')
 root = tree.getroot()
@@ -45,11 +46,18 @@ for child in root:
         old_modlinks_data['version'] = child.find(tag_version).text.strip()
         old_modlinks_data['link'] = child.find(tag_link).text.strip()
         old_modlinks_data['sha']  = child.find(tag_link).get('SHA256').strip()
+        old_modlinks_data['repo']  = child.find(tag_repo).text.strip()
         break
 
 print(old_modlinks_data)
 
-modlink_str = open('ModLinks.xml','r').read()
+modlink_str_orig = open('ModLinks.xml','r').read()
+
+#split out the section for this mod to find and replace in
+startIndexOld = modlink_str_orig.find("<Name>"+old_modlinks_data['name']+"</Name>")
+#handle case when multiple mods share the same repository
+endIndexOld = startIndexOld + modlink_str_orig[startIndexOld:].find("<![CDATA["+old_modlinks_data['repo']+"]]>")
+modlink_str = modlink_str_orig[startIndexOld:endIndexOld]
 
 if len(old_modlinks_data['version']) > 0:
     modlink_str = modlink_str.replace(old_modlinks_data['version'],new_version)
@@ -59,6 +67,9 @@ if len(old_modlinks_data['link']) > 0:
 
 if len(old_modlinks_data['sha']) > 0:
     modlink_str = modlink_str.replace(old_modlinks_data['sha'],new_sha)
+
+#modlinks surgery to inject the modified entry in place of the old entry
+modlink_str = modlink_str_orig[:startIndexOld] + modlink_str + modlink_str_orig[endIndexOld:]
 
 with open("ModLinks.xml", "w") as f:
     f.write(modlink_str)
