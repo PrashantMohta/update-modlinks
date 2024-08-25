@@ -28,6 +28,5 @@ jobs:
           project-name: ${{vars.PROJECT_NAME}}
           user-name: ${{vars.USER_NAME }}
           user-email: ${{vars.USER_EMAIL }}
-          asset-name: ${{vars.ASSET_NAME}}
-        
+          asset-name: ${{vars.ASSET_NAME}}   
 ```
